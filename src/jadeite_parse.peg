@@ -1,0 +1,53 @@
+%% Jadeite grammar declaration
+
+document <- (node)* `lists:flatten(Node)`;
+
+%%
+%%            (node)
+%%           /      \
+%% [L1]  (tag,     (text,  [R1]
+%%        flt, -->  cmt,
+%%        ...)      ...)?
+%%         |         |
+%% [L2] (colon)   (indent, [R2]
+%%          \      newln)
+%%           \     /
+%%            (end)
+
+%% FIXME: Presently, a newline is required at the end of file.
+node <- node_l1 node_j1 / node_j2 ~;
+node_l1 <- tag / filter / doctype / id / classname ~;
+node_j1 <- colon / node_j2 ~;
+node_j2 <- node_r1? node_r2 ~;
+node_r1 <- comment / block_comment / text ~;
+node_r2 <- indent / newline ~;
+
+tag <- tag_fullname attributes? ~;
+tag_fullname <- tag_name (':' tag_name)* `{tag, lists:flatten(Node)}`;
+tag_name <- [A-Za-z0-9] [A-Za-z0-9-]* `lists:flatten(Node)`;
+
+attributes <- '(' space* attr_list* space* ')' `lists:nth(3, Node)`;
+attr_list <- attr_nv attr_list_rest* ~;
+attr_list_rest <- space* ',' space* attr_nv `lists:nth(4, Node)`;
+attr_nv <- attr_name space* '=' space* attr_value `{attribute, lists:nth(1, Node), lists:nth(5, Node)}`;
+attr_name <- [A-Za-z0-9]+ ~;
+attr_value <- string_doublequoted / string_singlequoted / number ~;
+
+filter <- ':' [A-Za-z0-9]+ `{filter, lists:nth(2, Node)}`;
+doctype <- "!!!" space* [A-Za-z0-9]+ `{doctype, lists:nth(3, Node)}`;
+id <- '#' [A-Za-z0-9-]+ `{id, lists:nth(2, Node)}`;
+classname <- '.' [A-Za-z0-9-]+ `{classname, lists:nth(2, Node)}`;
+
+indent <- newline space+ `{indent, jadeite_utils:text_length(lists:nth(2, Node))}`;
+
+comment <- space* "//" '-'? (!newline .)+ `{comment, lists:flatten(lists:nth(4, Node)), lists:nth(3, Node) == "-"}`;
+block_comment <- '/' (!newline .)+ `{block_comment, lists:flatten(lists:nth(2, Node))}`;
+text <- ('|' space?)? (!newline .)+ `{text, lists:flatten(lists:nth(2, Node))}`;
+
+newline <- "\r\n" / '\n' `{newline, Node}`;
+space <- [ \t\s] ~;
+colon <- ':' space+ `{colon}`;
+
+string_doublequoted <- '"' [^"]* '"' `lists:nth(2, Node)`;
+string_singlequoted <- '\'' [^']* '\'' `lists:nth(2, Node)`;
+number <- '-'? [0-9]+ `lists:flatten(Node)`;

@@ -1,0 +1,7 @@
+{application, jadeite,
+ [
+  {description, "Jade-like template language implementation."},
+  {vsn, "0.1"},
+  {applications, [kernel, stdlib]}
+ ]
+}.

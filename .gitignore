@@ -1,0 +1,13 @@
+# Compiled BEAM files
+*.beam
+
+# Generated files and rebar stuff
+/src/jadeite_parse.erl
+/ebin
+/deps
+/logs
+/.eunit
+
+# Rebar binary itself
+# Get it from https://bitbucket.org/basho/rebar/wiki/Home
+/rebar
